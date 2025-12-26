@@ -1,4 +1,4 @@
--- lua/noti/render/minimal.lua
+-- lua/noti/render/minimal.lua (FIXED)
 -- Minimal notification renderer - just icon and message
 
 local config_util = require("noti.config")
@@ -6,30 +6,28 @@ local config_util = require("noti.config")
 --- Render a notification with minimal style
 ---@param notif Noti.Notification
 ---@param config table Configuration
----@return table[] Lines for volt rendering
+---@return string[] Simple text lines
 return function(notif, config)
   local lines = {}
-  local color = config_util.get_color(config, notif.level)
   
-  -- First line: icon + first message line
-  local first_line = {}
+  -- First line: icon + counter + first message line
+  local first_line = ""
+  
   if notif.icon ~= "" then
-    table.insert(first_line, { notif.icon .. " ", color })
+    first_line = notif.icon .. " "
   end
   
   -- Add duplicate counter if applicable
   if notif.duplicates and #notif.duplicates > 1 then
-    table.insert(first_line, { string.format("(x%d) ", #notif.duplicates), "CommentFg" })
+    first_line = first_line .. string.format("(x%d) ", #notif.duplicates)
   end
   
-  table.insert(first_line, { notif.message[1] or "", "Normal" })
+  first_line = first_line .. (notif.message[1] or "")
   table.insert(lines, first_line)
   
   -- Remaining message lines
   for i = 2, #notif.message do
-    table.insert(lines, {
-      { notif.message[i], "Normal" }
-    })
+    table.insert(lines, notif.message[i])
   end
   
   return lines

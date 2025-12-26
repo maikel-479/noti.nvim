@@ -31,9 +31,9 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
-  "your-username/noti",
+  "maikel-479/noti",
   dependencies = {
-    "NvChad/volt", -- Required: volt UI framework
+    "maikel-479/volt", -- Required: volt UI framework
     "nvim-lua/plenary.nvim", -- Optional: for async support
   },
   config = function()
@@ -403,7 +403,7 @@ MIT
 ## 🙏 Acknowledgments
 
 - [nvim-notify](https://github.com/rcarriga/nvim-notify) - Original inspiration and architecture
-- [volt](https://github.com/NvChad/volt) - Powerful UI framework that makes this possible
+- [volt](https://github.com/maikel-479/volt) - Powerful UI framework that makes this possible
 - [NvChad](https://github.com/NvChad) - For creating volt and the beautiful UI components
 
 ## 🤝 Contributing

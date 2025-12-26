@@ -1,5 +1,5 @@
--- lua/noti/service/init.lua
--- Notification service management
+-- lua/noti/service/init.lua (FIXED)
+-- Notification service management without Volt dependency
 
 local Notification = require("noti.service.notification")
 local Queue = require("noti.service.queue")
@@ -12,6 +12,7 @@ local history = require("noti.history")
 ---@field queue Noti.Queue Pending notifications
 ---@field animator Noti.Animator Window animator
 ---@field running boolean Service running state
+---@field fps number Frames per second
 local Service = {}
 Service.__index = Service
 
@@ -25,6 +26,7 @@ function Service.new(config)
     queue = Queue.new(),
     animator = Animator.new(config),
     running = false,
+    fps = config.fps or 30,
   }, Service)
   
   return self
@@ -51,12 +53,14 @@ function Service:tick()
     local notif = self.queue:peek()
     
     -- Try to create window for notification
-    local created = self.animator:show(notif)
+    local success = pcall(function()
+      return self.animator:show(notif)
+    end)
     
-    if created then
+    if success then
       self.queue:dequeue()
     else
-      -- No more space, wait for next tick
+      -- No more space or error, wait for next tick
       break
     end
   end
@@ -68,7 +72,7 @@ function Service:tick()
   if has_active or not self.queue:is_empty() then
     vim.defer_fn(function()
       self:tick()
-    end, 1000 / self.config.fps)
+    end, math.floor(1000 / self.fps))
   else
     self.running = false
   end
@@ -104,7 +108,7 @@ function Service:notify(message, level, opts)
       if opts.timeout == nil then notif.timeout = existing.timeout end
       
       -- Replace in animator
-      self.animator:replace(replace_id, notif)
+      pcall(self.animator.replace, self.animator, replace_id, notif)
       return notif:to_record()
     end
   end
@@ -124,7 +128,7 @@ function Service:notify(message, level, opts)
         and self.config.merge_duplicates or 2
       
       if #notif.duplicates >= min_dups then
-        self.animator:replace(duplicate.id, notif)
+        pcall(self.animator.replace, self.animator, duplicate.id, notif)
         return notif:to_record()
       end
     end
@@ -161,7 +165,7 @@ function Service:dismiss(opts)
   opts = opts or {}
   
   -- Close all active windows
-  self.animator:dismiss_all()
+  pcall(self.animator.dismiss_all, self.animator)
   
   -- Clear queue if requested
   if opts.pending then

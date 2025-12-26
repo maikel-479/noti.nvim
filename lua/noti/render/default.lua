@@ -1,14 +1,12 @@
--- lua/noti/render/default.lua
--- Default notification renderer with title, separator, message, and actions
+-- lua/noti/render/default.lua (FIXED)
+-- Simple, working default renderer
 
-local render_util = require("noti.render")
 local config_util = require("noti.config")
-local ui = require("volt.ui")
 
 --- Render a notification with default style
 ---@param notif Noti.Notification
 ---@param config table Configuration
----@return table[] Lines for volt rendering
+---@return string[] Lines with embedded highlight markers
 return function(notif, config)
   local lines = {}
   local color = config_util.get_color(config, notif.level)
@@ -17,71 +15,43 @@ return function(notif, config)
   local title = notif.title[1] or notif.level
   local time = notif.title[2] or ""
   
-  local title_parts = {}
+  -- Build title line
+  local title_line = ""
   if notif.icon ~= "" then
-    table.insert(title_parts, { notif.icon .. " ", color })
+    title_line = notif.icon .. " "
   end
-  if title ~= "" then
-    table.insert(title_parts, { title, "Normal" })
-  end
+  title_line = title_line .. title
   
   -- Add duplicate counter if applicable
   if notif.duplicates and #notif.duplicates > 1 then
-    table.insert(title_parts, { string.format(" (x%d)", #notif.duplicates), "CommentFg" })
+    title_line = title_line .. string.format(" (x%d)", #notif.duplicates)
   end
   
-  -- Padding between title and time
-  table.insert(title_parts, { "_pad_" })
-  
+  -- Add time to right
   if time ~= "" then
-    table.insert(title_parts, { time, "CommentFg" })
+    local space_count = 40 - vim.fn.strwidth(title_line) - vim.fn.strwidth(time)
+    if space_count > 0 then
+      title_line = title_line .. string.rep(" ", space_count) .. time
+    end
   end
   
-  table.insert(lines, title_parts)
+  table.insert(lines, title_line)
   
   -- Separator
-  table.insert(lines, render_util.separator(40, "─", color))
+  table.insert(lines, string.rep("─", 40))
   
   -- Message lines
   for _, line in ipairs(notif.message) do
-    table.insert(lines, {
-      { line, "Normal" }
-    })
+    table.insert(lines, line)
   end
   
   -- Actions if present
   if notif.actions and #notif.actions > 0 then
-    -- Action separator
-    table.insert(lines, {})
-    table.insert(lines, render_util.separator(40, "─", "CommentFg"))
+    table.insert(lines, "")
+    table.insert(lines, string.rep("─", 40))
     
-    -- Action buttons
-    for _, action in ipairs(notif.actions) do
-      local button = {
-        { "  ", "Normal" },
-        { "▶ ", color },
-        { action.text, action.hl or "ExBlue" },
-        action.callback
-      }
-      table.insert(lines, button)
-    end
-  end
-  
-  -- Pad lines with proper width handling
-  for i, line in ipairs(lines) do
-    if type(line) == "table" and line[1] then
-      -- Check if line has _pad_ marker
-      local has_pad = false
-      for _, part in ipairs(line) do
-        if part[1] == "_pad_" then
-          has_pad = true
-          break
-        end
-      end
-      
-      if has_pad then
-        lines[i] = ui.hpad(line, 40)
-      end
+    for i, action in ipairs(notif.actions) do
+      table.insert(lines, string.format("  [%d] %s", i, action.text))
     end
   end
   

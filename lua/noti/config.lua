@@ -26,13 +26,13 @@ local default_config = {
   
   -- Icons per level
   icons = {
-    ERROR = "",
-    WARN = "",
-    INFO = "",
-    DEBUG = "",
+    ERROR = "",
+    WARN = "",
+    INFO = "",
+    DEBUG = "",
     TRACE = "✎",
-  },
-  
+  }, 
+
   -- Colors per level (volt highlight groups)
   colors = {
     ERROR = "ExRed",
