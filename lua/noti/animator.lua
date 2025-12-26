@@ -232,8 +232,10 @@ function Animator:show(notif)
   if notif.timeout and notif.timeout > 0 then
     local timer = vim.loop.new_timer()
     timer:start(notif.timeout, 0, vim.schedule_wrap(function()
-      timer:stop()
-      timer:close()
+      pcall(function()
+        timer:stop()
+        timer:close()
+      end)
       if notif.keep and notif.keep() then
         return
       end
@@ -256,8 +258,11 @@ function Animator:close(notif_id)
   
   -- Stop timer
   if win_info.timer then
-    win_info.timer:stop()
-    win_info.timer:close()
+    pcall(function()
+      win_info.timer:stop()
+      win_info.timer:close()
+    end)
+    win_info.timer = nil
   end
   
   -- Call callbacks
@@ -314,17 +319,26 @@ function Animator:replace(old_id, new_notif)
   
   -- Reset timer if needed
   if win_info.timer then
-    win_info.timer:stop()
-    if new_notif.timeout and new_notif.timeout > 0 then
-      win_info.timer:start(new_notif.timeout, 0, vim.schedule_wrap(function()
-        win_info.timer:stop()
-        win_info.timer:close()
-        if new_notif.keep and new_notif.keep() then
-          return
-        end
-        self:close(new_notif.id)
-      end))
-    end
+    pcall(function()
+      win_info.timer:stop()
+      win_info.timer:close()
+    end)
+    win_info.timer = nil
+  end
+
+  if new_notif.timeout and new_notif.timeout > 0 then
+    local timer = vim.loop.new_timer()
+    win_info.timer = timer
+    timer:start(new_notif.timeout, 0, vim.schedule_wrap(function()
+      pcall(function()
+        timer:stop()
+        timer:close()
+      end)
+      if new_notif.keep and new_notif.keep() then
+        return
+      end
+      self:close(new_notif.id)
+    end))
   end
 end
 
